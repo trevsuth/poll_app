@@ -61,10 +61,6 @@ func resetHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "Votes reset successfully")
 }
 
-func homeHandler(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "templates/index.html")
-}
-
 func adminHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "templates/admin.html")
 }

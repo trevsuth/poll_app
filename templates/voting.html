@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Redis Vote on Dogs</title>
+</head>
+<body>
+    <h1>Do you like Dogs?</h1>
+    <button onclick="vote('yes')">Yes</button>
+    <button onclick="vote('no')">No</button>
+    <h2>Results</h2>
+    <p id="results"></p>
+
+    <script>
+        function vote(answer) {
+            fetch('/vote', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'vote=' + answer
+            })
+            .then(response => response.text())
+            .then(data => {
+                console.log(data);
+                getResults();
+            });
+        }
+
+        function getResults() {
+            fetch('/results')
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('results').textContent = data;
+            });
+        }
+
+        window.onload = function() {
+            getResults(); // Get results on initial load to display current counts
+        }
+    </script>
+</body>
+</html>

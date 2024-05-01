@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin - Vote Results</title>
+</head>
+<body>
+    <h1>Admin - Results of the Poll</h1>
+    <h2>Results</h2>
+    <p id="results"></p>
+    <button onclick="resetVotes()">Reset Votes</button>
+
+    <script>
+        function getResults() {
+            fetch('/results')
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('results').textContent = data;
+            });
+        }
+
+        function resetVotes() {
+            fetch('/reset', {
+                method: 'POST'
+            })
+            .then(response => response.text())
+            .then(data => {
+                console.log(data);
+                getResults(); // Refresh results to show reset counts
+            });
+        }
+
+        window.onload = function() {
+            getResults(); // Get results on initial load to display current counts
+        }
+    </script>
+</body>
+</html>

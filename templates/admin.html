@@ -1,36 +1,45 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Admin - Vote Results</title>
+    <title>Admin Panel</title>
 </head>
 <body>
-    <h1>Admin - Results of the Poll</h1>
-    <h2>Results</h2>
-    <p id="results"></p>
-    <button onclick="resetVotes()">Reset Votes</button>
+    <h1>Admin Panel</h1>
+    <input type="text" id="pollId" placeholder="Enter Poll ID" required>
+    <button onclick="fetchResults()">Load Results</button>
+    <div id="resultsDisplay"></div>
+    <button onclick="resetPoll()">Reset Poll</button>
 
     <script>
-        function getResults() {
-            fetch('/results')
-            .then(response => response.text())
-            .then(data => {
-                document.getElementById('results').textContent = data;
+        function fetchResults() {
+            const pollId = document.getElementById('pollId').value;
+            fetch(`/results/${pollId}`) // Adjust this URL based on your actual API endpoint
+                .then(response => response.json())
+                .then(results => {
+                    displayResults(results);
+                });
+        }
+
+        function displayResults(results) {
+            const display = document.getElementById('resultsDisplay');
+            display.innerHTML = ''; // Clear previous results
+            results.forEach(result => {
+                let p = document.createElement('p');
+                p.textContent = `${result.answer}: ${result.count}`;
+                display.appendChild(p);
             });
         }
 
-        function resetVotes() {
-            fetch('/reset', {
+        function resetPoll() {
+            const pollId = document.getElementById('pollId').value;
+            fetch(`/reset/${pollId}`, {
                 method: 'POST'
             })
             .then(response => response.text())
-            .then(data => {
-                console.log(data);
-                getResults(); // Refresh results to show reset counts
+            .then(result => {
+                alert('Poll reset: ' + result);
+                document.getElementById('resultsDisplay').innerHTML = '';
             });
-        }
-
-        window.onload = function() {
-            getResults(); // Get results on initial load to display current counts
         }
     </script>
 </body>

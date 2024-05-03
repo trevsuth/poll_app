@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -14,8 +15,12 @@ import (
 var ctx = context.Background()
 var redisClient *redis.Client
 
+type Poll struct {
+	Question string   `json:"question"`
+	Answers  []string `json:"answers"`
+}
+
 func main() {
-	// Load environment variables
 	err := godotenv.Load()
 	if err != nil {
 		fmt.Println("Error loading .env file")
@@ -24,27 +29,43 @@ func main() {
 	redisAddr := os.Getenv("REDIS_ADDR")
 	redisPassword := os.Getenv("REDIS_PASSWORD")
 
-	// Initialize Redis client
 	redisClient = redis.NewClient(&redis.Options{
 		Addr:     redisAddr,
 		Password: redisPassword,
-		DB:       0, // Default DB
+		DB:       0,
 	})
 
-	// Set up routes
 	r := mux.NewRouter()
 	r.HandleFunc("/", indexHandler)
+	r.HandleFunc("/create", createPollHandler).Methods("GET", "POST")
 	r.HandleFunc("/voting", votingHandler)
-	r.HandleFunc("/admin", adminHandler)
 	r.HandleFunc("/vote", voteHandler).Methods("POST")
-	r.HandleFunc("/results", resultsHandler).Methods("GET")
+	r.HandleFunc("/admin", adminHandler)
+	r.HandleFunc("/results", resultsHandler).Methods("POST")
 	r.HandleFunc("/reset", resetHandler).Methods("POST")
 	http.Handle("/", r)
 
-	// Start server
 	fmt.Println("Server starting on port 8080...")
 	http.ListenAndServe(":8080", nil)
 }
+
+func createPollHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "POST" {
+		var poll Poll
+		err := json.NewDecoder(r.Body).Decode(&poll)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		pollData, _ := json.Marshal(poll)
+		redisClient.Set(ctx, poll.Question, pollData, 0)
+		fmt.Fprint(w, "Poll created successfully")
+	} else {
+		http.ServeFile(w, r, "templates/create.html")
+	}
+}
+
+// Other handlers...
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "templates/index.html")

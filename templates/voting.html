@@ -1,41 +1,68 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Redis Vote on Dogs</title>
+    <title>Voting Page</title>
 </head>
 <body>
-    <h1>Do you like Dogs?</h1>
-    <button onclick="vote('yes')">Yes</button>
-    <button onclick="vote('no')">No</button>
-    <h2>Results</h2>
-    <p id="results"></p>
+    <h1>Voting Page</h1>
+    <input type="text" id="pollId" placeholder="Enter Poll ID" required>
+    <button onclick="fetchPoll()">Load Poll</button>
+    <div id="pollQuestion"></div>
+    <form id="voteForm">
+        <!-- Voting options will be appended here -->
+    </form>
 
     <script>
-        function vote(answer) {
-            fetch('/vote', {
+        function fetchPoll() {
+            const pollId = document.getElementById('pollId').value;
+            fetch(`/poll/${pollId}`) // Adjust this URL based on your actual API endpoint
+                .then(response => response.json())
+                .then(poll => {
+                    displayPoll(poll);
+                });
+        }
+
+        function displayPoll(poll) {
+            document.getElementById('pollQuestion').textContent = poll.question;
+            const form = document.getElementById('voteForm');
+            form.innerHTML = ''; // Clear previous options
+            poll.answers.forEach((answer, index) => {
+                let radio = document.createElement('input');
+                radio.type = 'radio';
+                radio.name = 'answer';
+                radio.value = answer;
+                radio.id = 'answer' + index;
+
+                let label = document.createElement('label');
+                label.htmlFor = 'answer' + index;
+                label.textContent = answer;
+
+                form.appendChild(radio);
+                form.appendChild(label);
+                form.appendChild(document.createElement('br'));
+            });
+
+            let button = document.createElement('button');
+            button.type = 'button';
+            button.textContent = 'Vote';
+            button.onclick = submitVote;
+            form.appendChild(button);
+        }
+
+        function submitVote() {
+            const selectedOption = document.querySelector('input[name="answer"]:checked').value;
+            const pollId = document.getElementById('pollId').value;
+            fetch(`/vote`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Content-Type': 'application/json',
                 },
-                body: 'vote=' + answer
+                body: JSON.stringify({ pollId, answer: selectedOption })
             })
             .then(response => response.text())
-            .then(data => {
-                console.log(data);
-                getResults();
+            .then(result => {
+                alert('Vote recorded: ' + result);
             });
-        }
-
-        function getResults() {
-            fetch('/results')
-            .then(response => response.text())
-            .then(data => {
-                document.getElementById('results').textContent = data;
-            });
-        }
-
-        window.onload = function() {
-            getResults(); // Get results on initial load to display current counts
         }
     </script>
 </body>

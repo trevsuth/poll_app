@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Poll</title>
+</head>
+<body>
+    <h1>Create a New Poll</h1>
+    <form id="createPollForm">
+        <input type="text" id="question" placeholder="Enter Poll Question" required>
+        <input type="text" id="answer1" placeholder="Answer 1" required>
+        <input type="text" id="answer2" placeholder="Answer 2">
+        <input type="text" id="answer3" placeholder="Answer 3">
+        <input type="text" id="answer4" placeholder="Answer 4">
+        <input type="text" id="answer5" placeholder="Answer 5">
+        <button type="button" onclick="createPoll()">Create Poll</button>
+    </form>
+
+    <script>
+        function createPoll() {
+            const question = document.getElementById('question').value;
+            const answers = [
+                document.getElementById('answer1').value,
+                document.getElementById('answer2').value,
+                document.getElementById('answer3').value,
+                document.getElementById('answer4').value,
+                document.getElementById('answer5').value
+            ].filter(answer => answer.length > 0);
+
+            fetch('/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ question, answers })
+            })
+            .then(response => response.text())
+            .then(data => alert(data));
+        }
+    </script>
+</body>
+</html>

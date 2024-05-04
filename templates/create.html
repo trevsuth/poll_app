@@ -6,6 +6,7 @@
 <body>
     <h1>Create a New Poll</h1>
     <form id="createPollForm">
+        <input type="text" id="pollId" placeholder="Enter Poll ID" required>
         <input type="text" id="question" placeholder="Enter Poll Question" required>
         <input type="text" id="answer1" placeholder="Answer 1" required>
         <input type="text" id="answer2" placeholder="Answer 2">
@@ -17,6 +18,7 @@
 
     <script>
         function createPoll() {
+            const pollId = document.getElementById('pollId').value;
             const question = document.getElementById('question').value;
             const answers = [
                 document.getElementById('answer1').value,
@@ -31,7 +33,7 @@
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ question, answers })
+                body: JSON.stringify({ pollId, question, answers })
             })
             .then(response => response.text())
             .then(data => alert(data));

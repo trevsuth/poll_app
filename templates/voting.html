@@ -7,62 +7,82 @@
     <h1>Voting Page</h1>
     <input type="text" id="pollId" placeholder="Enter Poll ID" required>
     <button onclick="fetchPoll()">Load Poll</button>
-    <div id="pollQuestion"></div>
-    <form id="voteForm">
-        <!-- Voting options will be appended here -->
-    </form>
+    <div id="pollContainer">
+        <h2 id="pollQuestion"></h2>
+        <form id="voteForm"></form>
+    </div>
 
     <script>
         function fetchPoll() {
             const pollId = document.getElementById('pollId').value;
-            fetch(`/poll/${pollId}`) // Adjust this URL based on your actual API endpoint
+            fetch(`/get-poll/${pollId}`) // This URL must match the backend endpoint
                 .then(response => response.json())
                 .then(poll => {
-                    displayPoll(poll);
+                    if (poll) {
+                        displayPoll(poll);
+                    } else {
+                        alert('Poll not found.');
+                        clearPollDisplay();
+                    }
+                })
+                .catch(error => {
+                    alert('Error fetching poll: ' + error.message);
+                    clearPollDisplay();
                 });
         }
 
         function displayPoll(poll) {
-            document.getElementById('pollQuestion').textContent = poll.question;
-            const form = document.getElementById('voteForm');
-            form.innerHTML = ''; // Clear previous options
+            const pollQuestion = document.getElementById('pollQuestion');
+            const voteForm = document.getElementById('voteForm');
+            pollQuestion.textContent = poll.question; // Display the poll question
+            voteForm.innerHTML = ''; // Clear previous options
+
+            // Create radio buttons for each answer
             poll.answers.forEach((answer, index) => {
-                let radio = document.createElement('input');
-                radio.type = 'radio';
-                radio.name = 'answer';
-                radio.value = answer;
-                radio.id = 'answer' + index;
+                const optionLabel = document.createElement('label');
+                const optionInput = document.createElement('input');
+                optionInput.type = 'radio';
+                optionInput.name = 'answer';
+                optionInput.value = answer;
+                optionInput.id = 'answer' + index;
+                optionLabel.htmlFor = 'answer' + index;
+                optionLabel.textContent = answer;
 
-                let label = document.createElement('label');
-                label.htmlFor = 'answer' + index;
-                label.textContent = answer;
+                const lineBreak = document.createElement('br');
 
-                form.appendChild(radio);
-                form.appendChild(label);
-                form.appendChild(document.createElement('br'));
+                voteForm.appendChild(optionInput);
+                voteForm.appendChild(optionLabel);
+                voteForm.appendChild(lineBreak);
             });
 
-            let button = document.createElement('button');
-            button.type = 'button';
-            button.textContent = 'Vote';
-            button.onclick = submitVote;
-            form.appendChild(button);
+            const voteButton = document.createElement('button');
+            voteButton.textContent = 'Submit Vote';
+            voteButton.onclick = submitVote; // Function to handle vote submission
+            voteForm.appendChild(voteButton);
         }
 
         function submitVote() {
-            const selectedOption = document.querySelector('input[name="answer"]:checked').value;
+            const selectedAnswer = document.querySelector('input[name="answer"]:checked').value;
             const pollId = document.getElementById('pollId').value;
-            fetch(`/vote`, {
+            fetch('/submit-vote', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ pollId, answer: selectedOption })
+                body: JSON.stringify({ pollId, answer: selectedAnswer })
             })
             .then(response => response.text())
-            .then(result => {
-                alert('Vote recorded: ' + result);
+            .then(data => {
+                alert(data); // Show confirmation or result
+            })
+            .catch(error => {
+                alert('Error submitting vote: ' + error.message);
             });
+        }
+
+        function clearPollDisplay() {
+            document.getElementById('pollQuestion').textContent = '';
+            document.getElementById('voteForm').innerHTML = '';
         }
     </script>
 </body>

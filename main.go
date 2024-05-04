@@ -49,23 +49,50 @@ func main() {
 	http.ListenAndServe(":8080", nil)
 }
 
+func getPollHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	pollId := vars["pollId"]
+	pollData, err := redisClient.Get(ctx, pollId).Result()
+	if err != nil {
+		http.Error(w, "Poll not found", 404)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(pollData))
+}
+
+// Submit Vote
+func submitVoteHandler(w http.ResponseWriter, r *http.Request) {
+	var vote struct {
+		PollID string `json:"pollId"`
+		Answer string `json:"answer"`
+	}
+	json.NewDecoder(r.Body).Decode(&vote)
+	// Increment vote count for the given answer in Redis
+	redisClient.HIncrBy(ctx, "poll:"+vote.PollID, vote.Answer, 1)
+	fmt.Fprintf(w, "Vote recorded successfully for %s", vote.Answer)
+}
+
 func createPollHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
-		var poll Poll
+		var poll struct {
+			PollID   string   `json:"pollId"`
+			Question string   `json:"question"`
+			Answers  []string `json:"answers"`
+		}
 		err := json.NewDecoder(r.Body).Decode(&poll)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			http.Error(w, "Error decoding request body", http.StatusBadRequest)
 			return
 		}
 		pollData, _ := json.Marshal(poll)
-		redisClient.Set(ctx, poll.Question, pollData, 0)
-		fmt.Fprint(w, "Poll created successfully")
+		// Use PollID as the key in Redis
+		redisClient.Set(ctx, poll.PollID, pollData, 0)
+		fmt.Fprintf(w, "Poll created successfully with ID: %s", poll.PollID)
 	} else {
 		http.ServeFile(w, r, "templates/create.html")
 	}
 }
-
-// Other handlers...
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "templates/index.html")
